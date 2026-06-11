@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: easypay
+    env: node
+    buildCommand: npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "3001"
+      - key: OUR_STRIPE_SECRET_KEY
+        sync: false
+      - key: FRONTEND_URL
+        value: https://easypay.onrender.com

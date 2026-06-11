@@ -1,17 +1,23 @@
-require('dotenv').config();
+require('dotenv').config({ path: __dirname + '/.env' });
 
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 const Stripe = require('stripe');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// CORS - allow the Vite frontend on localhost:5173
-app.use(cors({
-  origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
-  credentials: true,
-}));
+// Determine if we're running in production
+const isProduction = process.env.NODE_ENV === 'production';
+
+// CORS - allow the Vite frontend in development
+if (!isProduction) {
+  app.use(cors({
+    origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+    credentials: true,
+  }));
+}
 
 app.use(express.json());
 
@@ -20,7 +26,13 @@ app.use(express.json());
 // ---------------------------------------------------------------------------
 
 // Our own Stripe account (the one collecting the fee)
-const ourStripe = new Stripe(process.env.OUR_STRIPE_SECRET_KEY);
+const ourStripeKey = process.env.OUR_STRIPE_SECRET_KEY;
+if (!ourStripeKey || ourStripeKey.startsWith('sk_test_51Placeholder')) {
+  console.warn('⚠️  OUR_STRIPE_SECRET_KEY is not set or is a placeholder. Payment features will return errors until set.');
+}
+const ourStripe = ourStripeKey && !ourStripeKey.startsWith('sk_test_51Placeholder')
+  ? new Stripe(ourStripeKey)
+  : null;
 
 /**
  * POST /api/create-checkout-session
@@ -29,6 +41,9 @@ const ourStripe = new Stripe(process.env.OUR_STRIPE_SECRET_KEY);
  */
 app.post('/api/create-checkout-session', async (req, res) => {
   try {
+    if (!ourStripe) {
+      return res.status(500).json({ error: 'Server not configured with a Stripe key. Set OUR_STRIPE_SECRET_KEY in .env' });
+    }
     const session = await ourStripe.checkout.sessions.create({
       mode: 'payment',
       line_items: [
@@ -61,6 +76,9 @@ app.post('/api/create-checkout-session', async (req, res) => {
  */
 app.get('/api/check-payment-status', async (req, res) => {
   try {
+    if (!ourStripe) {
+      return res.status(500).json({ error: 'Server not configured with a Stripe key' });
+    }
     const { session_id } = req.query;
     if (!session_id) {
       return res.status(400).json({ error: 'Missing session_id parameter' });
@@ -144,6 +162,19 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+// ---------------------------------------------------------------------------
+// Serve the built frontend in production
+// ---------------------------------------------------------------------------
+if (isProduction) {
+  const clientDistPath = path.join(__dirname, '..', 'client', 'dist');
+  app.use(express.static(clientDistPath));
+
+  // For any non-API route, serve index.html (client-side routing)
+  app.get('/{*path}', (req, res) => {
+    res.sendFile(path.join(clientDistPath, 'index.html'));
+  });
+}
+
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`EasyPay server running on http://0.0.0.0:${PORT}`);
+  console.log(`EasyPay server running on http://0.0.0.0:${PORT} [${isProduction ? 'production' : 'development'}]`);
 });
