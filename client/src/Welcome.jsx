@@ -49,6 +49,11 @@ function Welcome() {
         >
           {loading ? 'Redirecting to Stripe...' : 'Get Started — $5'}
         </button>
+        <p style={{marginTop: '1rem', fontSize: '0.875rem'}}>
+          <a href="/wizard?demo=true" style={{color: '#635bff'}}>
+            Try Demo (skip payment)
+          </a>
+        </p>
         {error && <p className="error-msg">{error}</p>}
       </div>
     </div>

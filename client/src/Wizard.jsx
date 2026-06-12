@@ -4,10 +4,11 @@ import { useSearchParams } from 'react-router-dom';
 function Wizard() {
   const [searchParams] = useSearchParams();
   const sessionId = searchParams.get('session_id');
+  const isDemo = searchParams.get('demo') === 'true';
 
-  const [step, setStep] = useState(1);
-  const [paid, setPaid] = useState(false);
-  const [checkingPayment, setCheckingPayment] = useState(true);
+  const [step, setStep] = useState(isDemo ? 1 : 1);
+  const [paid, setPaid] = useState(isDemo ? true : false);
+  const [checkingPayment, setCheckingPayment] = useState(isDemo ? false : true);
 
   // Step 1 state
   const [stripeKey, setStripeKey] = useState('');
