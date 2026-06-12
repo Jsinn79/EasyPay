@@ -28,6 +28,7 @@ app.use(express.json());
 
 // Our own Stripe account (the one collecting the fee)
 const ourStripeKey = process.env.OUR_STRIPE_SECRET_KEY;
+const ourFrontendUrl = process.env.FRONTEND_URL || 'https://easy-ojdjmomo8-bourn79-9670s-projects.vercel.app';
 if (!ourStripeKey || ourStripeKey.startsWith('sk_test_51Placeholder')) {
   console.warn('⚠️  OUR_STRIPE_SECRET_KEY is not set or is a placeholder. Payment features will return errors until set.');
 }
@@ -60,8 +61,8 @@ app.post('/api/create-checkout-session', async (req, res) => {
           quantity: 1,
         },
       ],
-      success_url: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/wizard?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/`,
+      success_url: `${ourFrontendUrl}/wizard?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${ourFrontendUrl}/`,
     });
 
     res.json({ url: session.url, sessionId: session.id });
