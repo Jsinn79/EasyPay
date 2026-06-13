@@ -4,10 +4,9 @@
   "outputDirectory": "client/dist",
   "installCommand": "npm run install:all",
   "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "/api"
-    }
+    { "source": "/api/(.*)", "destination": "/api" },
+    { "source": "/favicon.svg", "destination": "/favicon.svg" },
+    { "source": "/(.*)", "destination": "/index.html" }
   ],
   "functions": {
     "api/index.js": {
